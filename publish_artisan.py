@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build & publish the Artisan fork (~/Projects/ffxiv/Artisan) to the custom repo.
+"""Build & publish the Artisan fork (~/Projects/ffxiv/ArtisanPrototype) to the custom repo.
 
 Artisan is a hand-written csproj (not Dalamud.NET.Sdk), so it needs:
   * -p:DalamudLibPath  -> local Dalamud dev DLLs ($(appdata) is empty on Linux)
@@ -34,7 +34,7 @@ from pathlib import Path
 
 ROOT = Path.home() / "Projects/ffxiv"
 REPO = ROOT / "plugin-repo"
-ARTISAN = ROOT / "Artisan"
+ARTISAN = ROOT / "ArtisanPrototype"
 CSPROJ = ARTISAN / "Artisan" / "Artisan.csproj"
 ZIP_IN = ARTISAN / "Artisan" / "bin" / "Release" / "ArtisanPrototype" / "latest.zip"
 PLUGIN = "ArtisanPrototype"
@@ -42,7 +42,7 @@ MANIFEST_IN_ZIP = "ArtisanPrototype.json"  # packager names it <AssemblyName>.js
 LEGACY_PLUGIN = "Artisan"  # pre-rename identity; removed from repo.json/dist
 DALAMUD_DEV = Path.home() / ".xlcore" / "dalamud" / "Hooks" / "dev"
 REMOTE = "https://raw.githubusercontent.com/AlexGMCode/dalamud-plugins/main"
-FORK_URL = "https://github.com/AlexGMCode/Artisan"
+FORK_URL = "https://github.com/AlexGMCode/ArtisanPrototype"
 
 
 def csproj_version() -> str:
