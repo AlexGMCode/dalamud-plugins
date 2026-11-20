@@ -77,7 +77,7 @@ def main():
         meta = json.loads((rel / (pdir.name + ".json")).read_text())
         ver = str(meta.get("Version", "0.0.0"))
         ver4 = ver if ver.count(".") == 3 else ver + ".0"
-        dl = f"{REMOTE}/{name}/{ver4}.zip" if REMOTE else f"UNHOSTED:{name}/{ver4}.zip"
+        dl = f"{REMOTE}/dist/{name}/{ver4}.zip" if REMOTE else f"UNHOSTED:dist/{name}/{ver4}.zip"
 
         entry = {
             "Author": meta.get("Author", ""),

@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "Author": "Taurenkey (Puni.sh)",
+    "Name": "Artisan",
+    "InternalName": "Artisan",
+    "Punchline": "A 'simple' crafting plugin.",
+    "Description": "The all-in-one crafting plugin.",
+    "AssemblyVersion": "4.0.5.28",
+    "RepoUrl": "https://github.com/AlexGMCode/Artisan",
+    "ApplicableVersion": "any",
+    "Tags": [
+      "crafting"
+    ],
+    "DalamudApiLevel": 15,
+    "IconUrl": "https://s3.puni.sh/media/plugin/6/icon-3h8wd5b9qr.png",
+    "DownloadLinkInstall": "https://raw.githubusercontent.com/AlexGMCode/dalamud-plugins/main/dist/Artisan/latest.zip",
+    "DownloadLinkUpdate": "https://raw.githubusercontent.com/AlexGMCode/dalamud-plugins/main/dist/Artisan/latest.zip",
+    "Changelog": "- Fix native button scaling issue.",
+    "IsHide": false,
+    "IsTestingExclusive": false
+  }
+]
