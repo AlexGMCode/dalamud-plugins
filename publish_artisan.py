@@ -6,9 +6,14 @@ Artisan is a hand-written csproj (not Dalamud.NET.Sdk), so it needs:
   * -p:EnableWindowsTargeting -> net10.0-windows TFM on Linux
   * -p:Version         -> fork version = upstream csproj <Version> with last
     component +2 (puni.sh deploys csproj+1; +2 keeps us clear of their line)
-  * zip post-processing: rename Artisan.json -> plugin.json (Dalamud installs
-    require plugin.json; the upstream host injects it at delivery instead)
-    and repoint RepoUrl/DownloadLink* at this repo.
+  * zip post-processing: rename ArtisanPrototype.json -> plugin.json (Dalamud
+    installs require plugin.json; the upstream host injects it at delivery
+    instead) and repoint RepoUrl/DownloadLink* at this repo.
+
+The fork's plugin identity is "ArtisanPrototype" (renamed from "Artisan" so
+it coexists with the official PunishXIV/Artisan in the same client):
+AssemblyName, manifest Name/InternalName and in-game labels were renamed in
+the fork itself (commit "Rename plugin identity to ArtisanPrototype").
 
 Usage:
   python3 publish_artisan.py            # build + stage dist + update repo.json
@@ -31,7 +36,10 @@ ROOT = Path.home() / "Projects/ffxiv"
 REPO = ROOT / "plugin-repo"
 ARTISAN = ROOT / "Artisan"
 CSPROJ = ARTISAN / "Artisan" / "Artisan.csproj"
-ZIP_IN = ARTISAN / "Artisan" / "bin" / "Release" / "Artisan" / "latest.zip"
+ZIP_IN = ARTISAN / "Artisan" / "bin" / "Release" / "ArtisanPrototype" / "latest.zip"
+PLUGIN = "ArtisanPrototype"
+MANIFEST_IN_ZIP = "ArtisanPrototype.json"  # packager names it <AssemblyName>.json
+LEGACY_PLUGIN = "Artisan"  # pre-rename identity; removed from repo.json/dist
 DALAMUD_DEV = Path.home() / ".xlcore" / "dalamud" / "Hooks" / "dev"
 REMOTE = "https://raw.githubusercontent.com/AlexGMCode/dalamud-plugins/main"
 FORK_URL = "https://github.com/AlexGMCode/Artisan"
@@ -45,10 +53,10 @@ def csproj_version() -> str:
 
 
 def postprocess_zip(src: Path, dst: Path, ver: str):
-    dl = f"{REMOTE}/dist/Artisan/latest.zip"
+    dl = f"{REMOTE}/dist/{PLUGIN}/latest.zip"
     with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zout:
         for info in zin.infolist():
-            if info.filename == "Artisan.json":
+            if info.filename == MANIFEST_IN_ZIP:
                 meta = json.loads(zin.read(info))
                 meta["AssemblyVersion"] = ver
                 meta["RepoUrl"] = FORK_URL
@@ -92,11 +100,11 @@ def main():
 
     if not ZIP_IN.exists():
         sys.exit(f"packager zip not found at {ZIP_IN}")
-    meta = json.loads(zipfile.ZipFile(ZIP_IN).read("Artisan.json"))
+    meta = json.loads(zipfile.ZipFile(ZIP_IN).read(MANIFEST_IN_ZIP))
     if str(meta.get("AssemblyVersion")) != ver:
         print(f"   note: zip manifest version {meta.get('AssemblyVersion')} != requested {ver}")
 
-    dist = REPO / "dist" / "Artisan"
+    dist = REPO / "dist" / PLUGIN
     dist.mkdir(parents=True, exist_ok=True)
     postprocess_zip(ZIP_IN, dist / "latest.zip", ver)
     print(f"   {dist / 'latest.zip'} ({(dist / 'latest.zip').stat().st_size // 1024} KB)")
@@ -105,8 +113,8 @@ def main():
     entries = json.loads(repo_json.read_text()) if repo_json.exists() else []
     entry = {
         "Author": meta.get("Author", ""),
-        "Name": meta.get("Name", "Artisan"),
-        "InternalName": "Artisan",
+        "Name": meta.get("Name", PLUGIN),
+        "InternalName": PLUGIN,
         "Punchline": meta.get("Punchline", ""),
         "Description": meta.get("Description", ""),
         "AssemblyVersion": ver,
@@ -115,19 +123,26 @@ def main():
         "Tags": meta.get("Tags", ["crafting"]),
         "DalamudApiLevel": meta.get("DalamudApiLevel", 15),
         "IconUrl": meta.get("IconUrl", ""),
-        "DownloadLinkInstall": f"{REMOTE}/dist/Artisan/latest.zip",
-        "DownloadLinkUpdate": f"{REMOTE}/dist/Artisan/latest.zip",
+        "DownloadLinkInstall": f"{REMOTE}/dist/{PLUGIN}/latest.zip",
+        "DownloadLinkUpdate": f"{REMOTE}/dist/{PLUGIN}/latest.zip",
         "Changelog": meta.get("Changelog", f"{ver} — fork published {datetime.now(timezone.utc):%Y-%m-%d}"),
         "IsHide": False,
         "IsTestingExclusive": False,
     }
     upsert(entries, entry)
+    entries = [e for e in entries if e.get("InternalName") != LEGACY_PLUGIN]
     repo_json.write_text(json.dumps(entries, indent=2) + "\n")
     print(f"repo.json now lists {len(entries)} plugin(s)")
 
     if push:
+        if (REPO / "dist" / LEGACY_PLUGIN).exists():
+            r = subprocess.run(["git", "rm", "-r", "dist/Artisan"], cwd=REPO,
+                               capture_output=True, text=True)
+            if r.returncode != 0:
+                print(r.stdout, r.stderr)
+                sys.exit("git rm legacy dist failed")
         for cmd in (["git", "add", "-A"],
-                    ["git", "commit", "-m", f"publish Artisan {ver} @ {datetime.now().isoformat(timespec='seconds')}"],
+                    ["git", "commit", "-m", f"publish {PLUGIN} {ver} @ {datetime.now().isoformat(timespec='seconds')}"],
                     ["git", "push"]):
             r = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True)
             if r.returncode != 0:
